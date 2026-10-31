@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="TaskFlow REST - A sleek, minimal, single-column task manager powered by Node.js and MySQL REST API.">
+  <meta name="theme-color" content="#170e0e">
+  <title>TaskFlow • Simple & Modern Task Manager</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="css/style.css?v=2.1">
+  
+  <!-- Favicon SVG -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M9 11l3 3L22 4'></path><path d='M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'></path></svg>">
+</head>
+<body>
+  <div class="app-layout">
+    
+    <!-- Sleek Minimal Top Navigation Header -->
+    <header class="top-nav" id="topNav">
+      <div class="top-nav-inner">
+        
+        <!-- Left: Brand Logo & Status -->
+        <div class="brand">
+          <div class="brand-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+              <path d="M2 17l10 5 10-5"></path>
+              <path d="M2 12l10 5 10-5"></path>
+            </svg>
+          </div>
+          <div class="brand-text">
+            <h1 class="brand-title">TaskFlow</h1>
+          </div>
+          <div class="api-status-pill" id="apiStatusPill" title="Connected to MySQL REST API">
+            <span class="pulse-dot"></span>
+            <span class="api-status-label" id="apiStatusLabel">Online</span>
+            <span class="api-latency-badge hidden" id="apiLatencyBadge">Active</span>
+          </div>
+        </div>
+
+        <!-- Center: Minimal Global Search -->
+        <div class="nav-center">
+          <div class="nav-search-wrapper">
+            <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="globalSearchInput" class="nav-search-input" placeholder="Search tasks... (Press /)" autocomplete="off">
+            <span class="search-shortcut-badge">/</span>
+            <button id="clearSearchBtn" class="clear-search-btn hidden" aria-label="Clear search">✕</button>
+          </div>
+        </div>
+
+        <!-- Right: Actions (Theme Toggle & New Task) -->
+        <div class="nav-right">
+          <!-- Theme Toggle -->
+          <button class="btn-icon theme-toggle-btn" id="themeToggleBtn" aria-label="Toggle Color Theme" title="Toggle Theme (Dark / Light)">
+            <svg class="theme-icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            <svg class="theme-icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          </button>
+
+          <!-- New Task Primary Button -->
+          <button class="btn-primary" id="openCreateModalBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <span>New Task</span>
+            <span class="btn-kbd">N</span>
+          </button>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- Main Centered Container (Apple Reminders / Things 3 Minimal Single-Column) -->
+    <main class="single-column-main" id="contentStage">
+      
+      <!-- Tab 1: Tasks Manager (Default View) -->
+      <section class="tab-panel active" id="tabTasks">
+        
+        <!-- Horizontal Segment Filter Tabs -->
+        <nav class="view-filter-bar" aria-label="Task Views">
+          <button class="filter-tab-btn active" data-view="all" id="navViewAll">
+            <span class="filter-tab-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            </span>
+            <span class="nav-item-text">All</span>
+            <span class="filter-tab-count" id="countAll">0</span>
+          </button>
+
+          <button class="filter-tab-btn" data-view="today" id="navViewToday">
+            <span class="filter-tab-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            </span>
+            <span class="nav-item-text">Due Today</span>
+            <span class="filter-tab-count" id="countToday">0</span>
+          </button>
+
+          <button class="filter-tab-btn" data-view="active" id="navViewActive">
+            <span class="filter-tab-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </span>
+            <span class="nav-item-text">In Progress</span>
+            <span class="filter-tab-count" id="countActive">0</span>
+          </button>
+
+          <button class="filter-tab-btn" data-view="completed" id="navViewCompleted">
+            <span class="filter-tab-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            </span>
+            <span class="nav-item-text">Completed</span>
+            <span class="filter-tab-count" id="countCompleted">0</span>
+          </button>
+        </nav>
+
+        <!-- View Header Strip: View Title, Progress, and Controls -->
+        <div class="view-header-row">
+          <div class="view-header-info">
+            <div class="view-title-wrap">
+              <h2 class="view-heading" id="currentViewTitle">All Tasks</h2>
+              <span class="view-task-counter" id="viewTaskCounter">0 tasks</span>
+            </div>
+            <div class="progress-pill">
+              <div class="progress-track">
+                <div class="progress-fill" id="boardProgressFill" style="width: 0%"></div>
+              </div>
+              <span class="progress-text" id="boardProgressText">0% Complete</span>
+            </div>
+          </div>
+
+          <div class="view-header-controls">
+            <!-- Priority Filter -->
+            <div class="control-select-box" title="Filter by priority">
+              <span class="control-label">Priority:</span>
+              <select id="priorityFilterSelect" class="custom-select">
+                <option value="all">All</option>
+                <option value="urgent">🔥 Urgent</option>
+                <option value="high">⚡ High</option>
+                <option value="medium">🔷 Medium</option>
+                <option value="low">🌱 Low</option>
+              </select>
+            </div>
+
+            <!-- Sort Select -->
+            <div class="control-select-box" title="Sort order">
+              <span class="control-label">Sort:</span>
+              <select id="sortSelect" class="custom-select">
+                <option value="created_at">Created</option>
+                <option value="due_date">Due Date</option>
+                <option value="priority">Priority</option>
+                <option value="title">Title</option>
+              </select>
+              <button class="btn-sort-dir" id="sortDirBtn" title="Toggle Sort Direction" aria-label="Toggle sort order">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M19 12l-7 7-7-7"></path></svg>
+              </button>
+            </div>
+
+            <!-- View Switcher (List vs Board) -->
+            <div class="view-switcher" role="tablist" aria-label="Layout View Switcher">
+              <button type="button" class="btn-view-toggle active" id="viewModeList" title="List View">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+              </button>
+              <button type="button" class="btn-view-toggle" id="viewModeKanban" title="Board View">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="18" rx="1"></rect><rect x="10" y="3" width="5" height="18" rx="1"></rect><rect x="17" y="3" width="5" height="18" rx="1"></rect></svg>
+              </button>
+            </div>
+
+            <!-- Bulk Toggle -->
+            <button class="btn-icon btn-bulk-toggle" id="toggleBulkModeBtn" title="Select Multiple Tasks">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Inline Task Input (Things 3 / Apple Reminders style) -->
+        <div class="quick-add-card">
+          <form id="quickAddForm" class="quick-add-form">
+            <span class="quick-add-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </span>
+            <input type="text" id="quickAddTitle" class="quick-add-input" placeholder="Add a task to your list... (Press Enter to save)" autocomplete="off" required>
+            
+            <div class="quick-add-options">
+              <select id="quickAddPriority" class="quick-select" aria-label="Priority">
+                <option value="urgent">🔥 Urgent</option>
+                <option value="high">⚡ High</option>
+                <option value="medium" selected>🔷 Medium</option>
+                <option value="low">🌱 Low</option>
+              </select>
+
+              <input type="date" id="quickAddDueDate" class="quick-date-picker" title="Due Date" aria-label="Due Date">
+
+              <button type="submit" class="btn-quick-submit" id="quickAddSubmitBtn">Add Task</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Bulk Selection Floating Toolbar -->
+        <div class="bulk-toolbar hidden" id="bulkToolbar">
+          <div class="bulk-info">
+            <span class="bulk-count-badge" id="bulkSelectedCount">0</span>
+            <span>items selected</span>
+          </div>
+          <div class="bulk-actions">
+            <button class="btn-bulk btn-bulk-select-all" id="bulkSelectAllBtn">Select All</button>
+            <button class="btn-bulk btn-bulk-complete" id="bulkCompleteBtn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              <span>Complete</span>
+            </button>
+            <button class="btn-bulk btn-bulk-delete" id="bulkDeleteBtn">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+              <span>Delete</span>
+            </button>
+            <button class="btn-bulk btn-bulk-cancel" id="bulkCancelBtn">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Tasks Display Container -->
+        <div class="tasks-container" id="tasksContainer">
+          
+          <!-- Loading Skeleton -->
+          <div class="tasks-loading-skeleton hidden" id="tasksSkeleton">
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+          </div>
+
+          <!-- Main Streamlined Single-Column List View (Default) -->
+          <div class="tasks-list" id="tasksList"></div>
+
+          <!-- Kanban Board Grid View (Alternative toggle) -->
+          <div class="kanban-board-grid hidden" id="kanbanBoard">
+            <!-- Column 1: To Do -->
+            <div class="kanban-column" id="colTodo" data-status="todo">
+              <div class="kanban-column-header">
+                <div class="kanban-col-left">
+                  <span class="col-status-dot col-dot-todo"></span>
+                  <h3 class="kanban-col-title">To Do</h3>
+                  <span class="kanban-col-badge" id="badgeColTodo">0</span>
+                </div>
+                <button class="btn-col-add" id="btnAddColTodo" title="Add task to To Do">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+              </div>
+              <div class="kanban-cards-track" id="cardsColTodo" data-status="todo"></div>
+            </div>
+
+            <!-- Column 2: In Progress -->
+            <div class="kanban-column" id="colInProgress" data-status="in_progress">
+              <div class="kanban-column-header">
+                <div class="kanban-col-left">
+                  <span class="col-status-dot col-dot-in-progress"></span>
+                  <h3 class="kanban-col-title">In Progress</h3>
+                  <span class="kanban-col-badge" id="badgeColInProgress">0</span>
+                </div>
+              </div>
+              <div class="kanban-cards-track" id="cardsColInProgress" data-status="in_progress"></div>
+            </div>
+
+            <!-- Column 3: Completed -->
+            <div class="kanban-column" id="colCompleted" data-status="completed">
+              <div class="kanban-column-header">
+                <div class="kanban-col-left">
+                  <span class="col-status-dot col-dot-completed"></span>
+                  <h3 class="kanban-col-title">Completed</h3>
+                  <span class="kanban-col-badge" id="badgeColCompleted">0</span>
+                </div>
+              </div>
+              <div class="kanban-cards-track" id="cardsColCompleted" data-status="completed"></div>
+            </div>
+          </div>
+
+          <!-- Empty State Display -->
+          <div class="tasks-empty-state hidden" id="tasksEmptyState">
+            <div class="empty-state-graphic">
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                <path d="M2 17l10 5 10-5"></path>
+                <path d="M2 12l10 5 10-5"></path>
+              </svg>
+            </div>
+            <h3 class="empty-state-title" id="emptyStateTitle">No tasks found</h3>
+            <p class="empty-state-desc" id="emptyStateDesc">Your list is clear! Add a task above to begin organizing your workflow.</p>
+            <button class="btn-primary" id="emptyStateActionBtn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              <span>Add Your First Task</span>
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Tab 2: REST API Explorer & Live Tester -->
+      <section class="tab-panel" id="tabApiExplorer">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">REST API Explorer & Live Console</h2>
+            <p class="panel-subtitle">Test and inspect the live backend endpoints directly. Demonstrates full CRUD, JSON request/response validation, and real latency metrics.</p>
+          </div>
+          <button class="btn-secondary" id="btnBackToTasksFromApi" onclick="selectView('all', 'All Tasks')">← Back to Tasks</button>
+        </div>
+
+        <div class="api-console-grid">
+          <div class="console-box console-request">
+            <div class="console-box-header">
+              <span class="console-box-title">Request Builder</span>
+              <span class="console-sub-label">Express & MySQL</span>
+            </div>
+
+            <div class="console-form">
+              <div class="api-url-bar">
+                <select id="apiMethodSelect" class="api-method-select">
+                  <option value="GET">GET</option>
+                  <option value="POST">POST</option>
+                  <option value="PUT">PUT</option>
+                  <option value="PATCH">PATCH</option>
+                  <option value="DELETE">DELETE</option>
+                </select>
+
+                <select id="apiPresetSelect" class="api-preset-select">
+                  <option value="/api/todos">/api/todos (Get all tasks)</option>
+                  <option value="/api/todos?status=active">/api/todos?status=active</option>
+                  <option value="/api/todos?priority=urgent">/api/todos?priority=urgent</option>
+                  <option value="/api/todos/1">/api/todos/1 (Get single task)</option>
+                  <option value="/api/todos [POST]">/api/todos [POST create]</option>
+                  <option value="/api/todos/1/toggle [PATCH]">/api/todos/1/toggle [PATCH toggle]</option>
+                  <option value="/api/stats">/api/stats (Database statistics)</option>
+                  <option value="/api/categories">/api/categories (Categories)</option>
+                  <option value="/api/schema">/api/schema (MySQL Schema info)</option>
+                  <option value="/api/health">/api/health (System health)</option>
+                  <option value="/api/activity">/api/activity (Audit logs)</option>
+                </select>
+              </div>
+
+              <div class="custom-endpoint-input-row">
+                <span class="endpoint-prefix">http://localhost:3000</span>
+                <input type="text" id="apiEndpointInput" class="custom-endpoint-input" value="/api/todos" placeholder="/api/todos">
+                <button class="btn-primary" id="btnExecuteApi">Send Request</button>
+              </div>
+
+              <div class="payload-editor-wrapper" id="payloadEditorWrapper">
+                <div class="payload-editor-header">
+                  <span>JSON Request Body:</span>
+                  <button class="btn-text-action" id="formatJsonBtn">Format JSON</button>
+                </div>
+                <textarea id="apiRequestBody" class="payload-textarea" rows="7" placeholder='{\n  "title": "New REST Todo",\n  "priority": "high",\n  "category": "Development"\n}'></textarea>
+              </div>
+
+              <div class="api-doc-accordion">
+                <div class="accordion-title">REST API Specifications & Endpoints</div>
+                <div class="api-specs-table-wrap">
+                  <table class="api-specs-table">
+                    <thead>
+                      <tr><th>Method</th><th>Endpoint</th><th>Description</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td><span class="badge-get">GET</span></td><td><code>/api/todos</code></td><td>Retrieve todos with filtering, search & sorting</td></tr>
+                      <tr><td><span class="badge-get">GET</span></td><td><code>/api/todos/:id</code></td><td>Retrieve single todo by ID</td></tr>
+                      <tr><td><span class="badge-post">POST</span></td><td><code>/api/todos</code></td><td>Create new todo with validation</td></tr>
+                      <tr><td><span class="badge-put">PUT</span></td><td><code>/api/todos/:id</code></td><td>Full replace/update of a todo</td></tr>
+                      <tr><td><span class="badge-patch">PATCH</span></td><td><code>/api/todos/:id</code></td><td>Partial update (title, priority, due_date)</td></tr>
+                      <tr><td><span class="badge-patch">PATCH</span></td><td><code>/api/todos/:id/toggle</code></td><td>Toggle task completed status</td></tr>
+                      <tr><td><span class="badge-delete">DELETE</span></td><td><code>/api/todos/:id</code></td><td>Delete todo from MySQL</td></tr>
+                      <tr><td><span class="badge-post">POST</span></td><td><code>/api/todos/bulk</code></td><td>Bulk complete or delete IDs</td></tr>
+                      <tr><td><span class="badge-get">GET</span></td><td><code>/api/stats</code></td><td>Summary statistics & category metrics</td></tr>
+                      <tr><td><span class="badge-get">GET</span></td><td><code>/api/schema</code></td><td>Introspect MySQL table schemas</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="console-box console-response">
+            <div class="console-box-header">
+              <span class="console-box-title">Live Response Inspector</span>
+              <div class="response-status-group">
+                <span class="response-badge" id="responseStatusBadge">Status: Ready</span>
+                <span class="response-time-pill" id="responseTimePill">0 ms</span>
+              </div>
+            </div>
+
+            <div class="console-response-body">
+              <div class="response-toolbar">
+                <span class="response-content-type">Content-Type: application/json</span>
+                <button class="btn-copy-code" id="btnCopyApiResponse">Copy JSON</button>
+              </div>
+              <pre class="json-code-viewer" id="apiResponseViewer">// Press "Send Request" to test the live REST endpoint</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 3: MySQL Database Schema Inspector -->
+      <section class="tab-panel" id="tabDbSchema">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">MySQL Database Schema & Structure</h2>
+            <p class="panel-subtitle">Direct live introspection of MySQL tables, column types, primary keys, and real row counts via <code>mysql2/promise</code>.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button class="btn-secondary" id="btnRefreshSchema">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+              <span>Refresh Schema</span>
+            </button>
+            <button class="btn-secondary" onclick="selectView('all', 'All Tasks')">← Back to Tasks</button>
+          </div>
+        </div>
+
+        <div class="schema-cards-grid" id="schemaCardsGrid"></div>
+      </section>
+
+      <!-- Tab 4: Analytics & Audit Logs -->
+      <section class="tab-panel" id="tabAnalytics">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Task Analytics & Audit Trail</h2>
+            <p class="panel-subtitle">Visual breakdown of task metrics and persistent MySQL audit activity logs.</p>
+          </div>
+          <button class="btn-secondary" onclick="selectView('all', 'All Tasks')">← Back to Tasks</button>
+        </div>
+
+        <div class="analytics-layout-grid">
+          <div class="analytics-card">
+            <h3 class="analytics-card-title">Priority Completion Rates</h3>
+            <div class="category-bars-list" id="categoryAnalyticsBars"></div>
+          </div>
+
+          <div class="analytics-card">
+            <h3 class="analytics-card-title">Tasks by Priority</h3>
+            <div class="priority-bars-list" id="priorityAnalyticsBars"></div>
+          </div>
+
+          <div class="analytics-card full-width-card">
+            <div class="analytics-card-header">
+              <h3 class="analytics-card-title">Recent Database Audit Logs</h3>
+              <span class="audit-badge">MySQL `activity_logs` table</span>
+            </div>
+            <div class="audit-log-list" id="auditLogList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sleek Minimalist Footer -->
+      <footer class="app-minimal-footer">
+        <div class="footer-left">
+          <span class="footer-brand-tag">TaskFlow REST</span>
+          <span class="footer-sep">•</span>
+          <span>Single-Column Minimal Edition</span>
+        </div>
+        <div class="footer-links">
+          <button class="footer-link-btn" data-tab="analytics" id="navTabAnalytics">Analytics</button>
+          <button class="footer-link-btn" data-tab="api-explorer" id="navTabApi">API Console</button>
+          <button class="footer-link-btn" data-tab="db-schema" id="navTabDb">Database Schema</button>
+          <button class="footer-link-btn footer-reset-btn" id="resetDemoBtn">Reset DB</button>
+        </div>
+      </footer>
+
+    </main>
+
+  </div>
+
+  <!-- Modal: Create / Edit Task -->
+  <div class="modal-overlay hidden" id="taskModalOverlay" role="dialog" aria-modal="true" aria-labelledby="taskModalTitle">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 class="modal-title" id="taskModalTitle">Create New Task</h3>
+        <button class="modal-close-btn" id="closeTaskModalBtn" aria-label="Close dialog">✕</button>
+      </div>
+
+      <form id="taskForm" class="modal-form">
+        <input type="hidden" id="editTaskId" value="">
+
+        <!-- Title Input -->
+        <div class="form-group">
+          <label for="taskTitleInput" class="form-label">Task Title <span class="required">*</span></label>
+          <input type="text" id="taskTitleInput" class="form-control" placeholder="What needs to be accomplished?" required maxlength="150" autocomplete="off">
+        </div>
+
+        <!-- Description Textarea -->
+        <div class="form-group">
+          <label for="taskDescInput" class="form-label">Description & Notes</label>
+          <textarea id="taskDescInput" class="form-control" rows="3" placeholder="Add detailed instructions, context, or checklist notes..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <!-- Due Date -->
+          <label for="taskDueDateInput" class="form-label">Due Date</label>
+          <input type="date" id="taskDueDateInput" class="form-control">
+        </div>
+
+        <!-- Priority Selector Chips -->
+        <div class="form-group">
+          <label class="form-label">Priority Level</label>
+          <div class="priority-radio-group">
+            <label class="priority-chip priority-chip-low">
+              <input type="radio" name="priority" value="low">
+              <span>🌱 Low</span>
+            </label>
+            <label class="priority-chip priority-chip-medium">
+              <input type="radio" name="priority" value="medium" checked>
+              <span>🔷 Medium</span>
+            </label>
+            <label class="priority-chip priority-chip-high">
+              <input type="radio" name="priority" value="high">
+              <span>⚡ High</span>
+            </label>
+            <label class="priority-chip priority-chip-urgent">
+              <input type="radio" name="priority" value="urgent">
+              <span>🔥 Urgent</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Kanban Workflow Status -->
+        <div class="form-group">
+          <label class="form-label">Workflow Stage</label>
+          <div class="status-radio-group">
+            <label class="status-chip status-chip-todo">
+              <input type="radio" name="status" value="todo" checked>
+              <span>📋 To Do</span>
+            </label>
+            <label class="status-chip status-chip-in-progress">
+              <input type="radio" name="status" value="in_progress">
+              <span>⚡ In Progress</span>
+            </label>
+            <label class="status-chip status-chip-completed">
+              <input type="radio" name="status" value="completed">
+              <span>✓ Completed</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-row-2">
+          <!-- Estimated Minutes -->
+          <div class="form-group">
+            <label for="taskEstMinutesInput" class="form-label">Estimated Time (minutes)</label>
+            <input type="number" id="taskEstMinutesInput" class="form-control" min="5" max="999" value="30" step="5">
+          </div>
+
+          <!-- Pin to top toggle -->
+          <div class="form-group form-checkbox-group">
+            <label class="checkbox-label" for="taskPinnedInput">
+              <input type="checkbox" id="taskPinnedInput" class="custom-checkbox-input">
+              <span class="checkbox-label-text">📌 Pin task to top</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Tags Input -->
+        <div class="form-group">
+          <label for="taskTagsInput" class="form-label">Tags (press Enter to add)</label>
+          <div class="tags-input-container" id="tagsInputContainer">
+            <div class="tags-chips-list" id="tagsChipsList"></div>
+            <input type="text" id="taskTagsInput" class="tags-inline-input" placeholder="e.g. design, backend...">
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" id="cancelTaskModalBtn">Cancel</button>
+          <button type="submit" class="btn-primary" id="saveTaskBtn">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Confirmation Dialog -->
+  <div class="modal-overlay hidden" id="confirmModalOverlay" role="dialog" aria-modal="true">
+    <div class="modal-container modal-small">
+      <div class="modal-header">
+        <h3 class="modal-title" id="confirmModalTitle">Confirm Action</h3>
+        <button class="modal-close-btn" id="closeConfirmModalBtn" aria-label="Close dialog">✕</button>
+      </div>
+      <div class="modal-body-padding">
+        <p class="confirm-message" id="confirmModalMessage">Are you sure you want to proceed?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" id="confirmCancelBtn">Cancel</button>
+        <button type="button" class="btn-danger" id="confirmProceedBtn">Proceed</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Scripts -->
+  <script src="js/api.js?v=2.1"></script>
+  <script src="js/app.js?v=2.1"></script>
+</body>
+</html>
